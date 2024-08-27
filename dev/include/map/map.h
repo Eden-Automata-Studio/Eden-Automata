@@ -13,7 +13,6 @@
 #define FADE(t) 6 * pow(t, 5.0) - 15 * pow(t, 4.0) + 10 * pow(t, 3.0)
 // 线性插值
 #define INTERPOLATION(a, f, c) a + f * (c - a)
-#define COSINE_INTERPOLATION(a, f, c) a + (1 - cos(f * M_PI)) / 2 * (c - a)
 #define SCALE_INTERPOLATE(x, n) (uint64_t)(((x + 1) / 2) * n)
 
 

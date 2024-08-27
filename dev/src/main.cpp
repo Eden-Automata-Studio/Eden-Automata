@@ -2,6 +2,6 @@
 #include "map/map.h"
 
 int main() {
-    Map test(2000,2000,650);
+    Map test(200,200,650);
     return 0;
 }

@@ -8,7 +8,7 @@
 #include <png.h>
 
 void Map::constructSelf(uint32_t seed){
-    auto a = generateBerlinNoiceMap(seed, 255, 0.1);
+    auto a = generateBerlinNoiceMap(seed, 255, 0.01);
 }
 
 void write_png(const char* filename, uint64_t* data, int width, int height) {
@@ -72,10 +72,10 @@ uint64_t* Map::generateBerlinNoiceMap(uint32_t seed, uint64_t maximum, double_t 
 #ifdef DEBUG_PRINT
     auto start = std::chrono::high_resolution_clock::now();
 #endif
-    #pragma omp parallel
+    //#pragma omp parallel
     {    
         srand(seed + omp_get_thread_num());
-        #pragma omp for
+        //#pragma omp for
         for (uint64_t i = 0; i < this->length * this->width; i++)
         {
             uint64_t rng = rand() % 360;
@@ -84,7 +84,7 @@ uint64_t* Map::generateBerlinNoiceMap(uint32_t seed, uint64_t maximum, double_t 
             std::pair<double_t,double_t> vector(magnitude * cos(rotateAngle), magnitude * sin(rotateAngle));
             vecArr[i] = vector;
         }
-        #pragma omp for collapse(2)
+        //#pragma omp for collapse(2)
         for (uint64_t x = 0; x < this->width; x++)
         {
             for (uint64_t y = 0; y < this->length; y++)
@@ -97,15 +97,20 @@ uint64_t* Map::generateBerlinNoiceMap(uint32_t seed, uint64_t maximum, double_t 
                 std::pair<uint64_t,uint64_t> rightButtom ((uint64_t)scaled_x + 1 , (uint64_t)scaled_y    );
                 std::pair<uint64_t,uint64_t> rightTop    ((uint64_t)scaled_x + 1 , (uint64_t)scaled_y + 1);
 
-                std::pair<double_t,double_t> leftButtomVector  (vecArr[leftButtom.first].first  , vecArr[leftButtom.second].second  );
-                std::pair<double_t,double_t> leftTopVector     (vecArr[leftTop.first].first     , vecArr[leftTop.second].second     );
-                std::pair<double_t,double_t> rightButtomVector (vecArr[rightButtom.first].first , vecArr[rightButtom.second].second );
-                std::pair<double_t,double_t> rightTopVector    (vecArr[rightTop.first].first    , vecArr[rightTop.second].second    );
+                uint64_t leftButtomIndex = INDEX(leftButtom.first, leftButtom.second, this->width);
+                uint64_t leftTopIndex = INDEX(leftTop.first, leftTop.second, this->width);
+                uint64_t rightButtomIndex = INDEX(rightButtom.first, rightButtom.second, this->width);
+                uint64_t rightTopIndex = INDEX(rightTop.first, rightTop.second, this->width);
 
-                std::pair<double_t,double_t> toLeftButtomVector  ((double_t)leftButtom.first  - scaled_x ,(double_t)leftButtom.second  - scaled_y);
-                std::pair<double_t,double_t> toLeftTopVector     ((double_t)leftTop.first     - scaled_x ,(double_t)leftTop.second     - scaled_y);
-                std::pair<double_t,double_t> toRightButtomVector ((double_t)rightButtom.first - scaled_x ,(double_t)rightButtom.second - scaled_y);
-                std::pair<double_t,double_t> toRightTopVector    ((double_t)rightTop.first    - scaled_x ,(double_t)rightTop.second    - scaled_y);
+                std::pair<double_t,double_t> leftButtomVector = vecArr[leftButtomIndex];
+                std::pair<double_t,double_t> leftTopVector    = vecArr[leftTopIndex];
+                std::pair<double_t,double_t> rightButtomVector= vecArr[rightButtomIndex];
+                std::pair<double_t,double_t> rightTopVector   = vecArr[rightTopIndex];
+
+                std::pair<double_t,double_t> toLeftButtomVector  (((double_t)leftButtom.first)  - scaled_x ,((double_t)leftButtom.second)  - scaled_y);
+                std::pair<double_t,double_t> toLeftTopVector     (((double_t)leftTop.first)     - scaled_x ,((double_t)leftTop.second )    - scaled_y);
+                std::pair<double_t,double_t> toRightButtomVector (((double_t)rightButtom.first) - scaled_x ,((double_t)rightButtom.second) - scaled_y);
+                std::pair<double_t,double_t> toRightTopVector    (((double_t)rightTop.first)    - scaled_x ,((double_t)rightTop.second)    - scaled_y);
 
                 double_t dotProductLeftButtom  = leftButtomVector.first  * toLeftButtomVector.first  + leftButtomVector.second  * toLeftButtomVector.second ;
                 double_t dotProductLeftTop     = leftTopVector.first     * toLeftTopVector.first     + leftTopVector.second     * toLeftTopVector.second    ;
@@ -115,8 +120,8 @@ uint64_t* Map::generateBerlinNoiceMap(uint32_t seed, uint64_t maximum, double_t 
                 std::pair<double_t,double_t> localLoc (scaled_x - leftButtom.first, scaled_y - leftButtom.second);
                 std::pair<double_t,double_t> localFadeLoc (FADE(localLoc.first), FADE(localLoc.second));
                 std::pair<double_t,double_t> interpolationX (INTERPOLATION(dotProductRightButtom,localFadeLoc.second, dotProductLeftTop),
-                                                             INTERPOLATION( dotProductRightTop, localFadeLoc.second, dotProductLeftButtom ));
-                double_t interpolationY = INTERPOLATION(interpolationX.second , localFadeLoc.first, interpolationX.first);
+                                                             INTERPOLATION( dotProductLeftButtom, localFadeLoc.second, dotProductRightTop ));
+                double_t interpolationY = INTERPOLATION(interpolationX.first , localFadeLoc.first, interpolationX.second);
 
                 uint64_t scaledInterpolation = SCALE_INTERPOLATE(interpolationY, maximum);
                 resultArr[INDEX(x,y,this->width)] = scaledInterpolation;
@@ -131,7 +136,7 @@ uint64_t* Map::generateBerlinNoiceMap(uint32_t seed, uint64_t maximum, double_t 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = end - start;
     std::cout << "With omp: " << duration.count()/1000000<< " ms" << std::endl;
-    write_png("map.png",resultArr, this->width, this->length);
+    write_png("map1.png",resultArr, this->width, this->length);
 #endif
     delete[] vecArr;
     return resultArr;
