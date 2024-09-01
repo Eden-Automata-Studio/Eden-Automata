@@ -13,7 +13,7 @@
 #define FADE(t) 6 * pow(t, 5.0) - 15 * pow(t, 4.0) + 10 * pow(t, 3.0)
 // 线性插值
 #define INTERPOLATION(a, f, c) a + f * (c - a)
-#define SCALE_INTERPOLATE(x, n) (uint64_t)(((x + 1) / 2) * n)
+#define SCALE_INTERPOLATE(x, n) (uint64_t)(x * n)
 
 
 /// @brief 表示W x L的地图，单位是米

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(CPL VERSION 1.0)
 option(ENABLE_DEBUG_PRINT "打印信息" ON)
 # 设置C++标准
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(OpenMP REQUIRED)
