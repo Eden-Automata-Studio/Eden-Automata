@@ -22,8 +22,14 @@ public:
     uint32_t width;     // 地图的宽度
     uint32_t length;    // 地图的长度
     uint32_t seed;      // 种子
-    uint64_t* mapPtr;   // 地图数据指针，值为地图上该点移动难度
+    uint64_t* mapPtr;   // 地图数据指针，值为地图上该点参数
     
+    uint64_t landscapeBits  = 8;
+    uint64_t tempBits       = 8;
+    uint64_t humidityBits   = 7;
+    uint64_t visilibityBits = 7;
+    uint64_t movabalityBits = 7;
+    uint64_t plantBits      = 2 + 7 + 10;
 
     /// @brief 通过指定长宽来构造一个随机权重的地图
     /// @param width 
@@ -38,6 +44,23 @@ public:
     uint64_t* generateBerlinNoiceMap(uint32_t seed, uint64_t maximum, double_t scale_factor);
 
     uint64_t berlinNoice(uint64_t x, uint64_t y);
+
+    MapPoint decodeMapPoint(uint64_t);
+    uint64_t encodeMapPoint(MapPoint);
+};
+
+struct OnMapPlant {
+    uint8_t eatTag;
+    uint16_t grow_rate;
+    uint16_t calorie;
+};
+
+struct MapPoint{
+    uint8_t landscape;
+    float_t temperature;
+    uint8_t humidity;
+    uint8_t visibility;
+    OnMapPlant plantInfo;
 };
 
 

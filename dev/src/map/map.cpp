@@ -9,7 +9,36 @@
 #include "map/PerlinNoise.hpp"
 
 void Map::constructSelf(uint32_t seed){
-    auto a = generateBerlinNoiceMap(seed, 255, 0.01);
+    int leftshiftBits = 0;
+    int landscapeBits = 7;
+    uint64_t* landscapeMap = generateBerlinNoiceMap(seed, 1 << landscapeBits, 0.01);
+    #pragma omp parallel
+    {
+        #pragma omp for
+        for (uint64_t i = 0; i < this->length * this->width; i++)
+        {
+            this->mapPtr[i] += landscapeMap[i] << leftshiftBits;
+        }
+    }
+    leftshiftBits += landscapeBits;
+    delete[] landscapeMap;
+    int tempBits = 10; //-15.6 -- 35.6
+    uint64_t* tempMap = generateBerlinNoiceMap(seed, 1 << tempBits, 0.01);
+    #pragma omp parallel
+    {
+        #pragma omp for collapse(2)
+        for (uint64_t x = 0; x < this->width; x++)
+        {
+            for (uint64_t y = 0; y < this->length; y++)
+            {
+                uint64_t val = tempMap[INDEX(x, y, this->width)];
+
+            }
+
+        }
+    }
+    leftshiftBits += tempBits;
+    delete[] tempMap;
 }
 
 void write_png(const char* filename, uint64_t* data, int width, int height) {
@@ -68,7 +97,6 @@ void write_png(const char* filename, uint64_t* data, int width, int height) {
 }
 
 uint64_t* Map::generateBerlinNoiceMap(uint32_t seed, uint64_t maximum, double_t scale_factor){
-    std::pair<double_t,double_t>* vecArr = new std::pair<double_t,double_t>[width*length];
     uint64_t* resultArr = new uint64_t[width*length];
 #ifdef DEBUG_PRINT
     auto start = std::chrono::high_resolution_clock::now();
@@ -83,7 +111,7 @@ uint64_t* Map::generateBerlinNoiceMap(uint32_t seed, uint64_t maximum, double_t 
         {
             for (uint64_t y = 0; y < this->length; y++)
             {
-                const double noise = perlin.octave2D_01(((double_t)(x) * scale_factor), ((double_t)(y) * scale_factor), 14);
+                const double noise = perlin.octave2D_01(((double_t)(x) * scale_factor), ((double_t)(y) * scale_factor), 5);
                 uint64_t scaledNoise = SCALE_INTERPOLATE(noise, maximum);
                 resultArr[INDEX(x,y,this->width)] = scaledNoise;
             }
@@ -98,6 +126,5 @@ uint64_t* Map::generateBerlinNoiceMap(uint32_t seed, uint64_t maximum, double_t 
     std::cout << "With omp: " << duration.count()/1000000<< " ms" << std::endl;
     write_png("map1.png",resultArr, this->width, this->length);
 #endif
-    delete[] vecArr;
     return resultArr;
 }
